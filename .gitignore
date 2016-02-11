@@ -5,3 +5,6 @@ emacs temp files
 
 python files
 *.pyc
+
+data files
+*.csv
