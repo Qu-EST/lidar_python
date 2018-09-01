@@ -1,0 +1,7 @@
+
+emacs temp files
+*~*
+*#*
+
+python files
+*.pyc
