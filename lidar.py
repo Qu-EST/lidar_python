@@ -17,7 +17,7 @@ parser.add_argument('-M', '--zmacro', type=float, help='z Macro step size', defa
 parser.add_argument('-f', '--filename', type=str, help='filename to save the data', default='lidar.csv')
 parser.add_argument('-t', '--tdc', type=int, help='tdc integration time', default=10)
 parser.add_argument('-p', '--peakcheck', type=float, help='peak check', default=10)
-parser.add_argument('-l', '--peakcheck', help='doing a normal lidar', action='store_true')
+parser.add_argument('-l', '--lidar', help='doing a normal lidar', action='store_true')
 parser.add_argument('-v', '--verbose', help='print the verbose', action='store_true')
 
 
@@ -34,7 +34,13 @@ if(mirror_fd<0):
     exit()
 
     
-count_fd, control_fd = counter.open_counter()
+count_fd, control_fd = counter.open_counter(args.tdc)
+
+save_fd = open(args.filename, 'w+')
+
+
+
+
 
 if(count_fd<0):
     print "unable to connect to the counter"
@@ -47,12 +53,23 @@ if(control_fd<0):
     exit()
 
 
-
-def lidar():
+def lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
+    
     pass
 
 
-def adaptive_lidar():
+
+def adaptive_lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
     pass
+
+
+
+    
+if(args.lidar):
+    lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd)
+else:
+    adaptive_lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd)
+
+
 
 
