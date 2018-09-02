@@ -54,9 +54,15 @@ if(control_fd<0):
 
 
 def lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
-    
-    pass
-
+    for x in range(args.xmin, args.xmax, args.xstep):
+        for y in range(args.ymin, args.ymax, args.ystep):
+            mems.set_pos(mirror_fd, x, y)
+            for z in range(args.zmin, args.zmax, args.zstep):
+                delay_fd.write('DLY '+str(z))
+                count = counter.count(control_fd, count_fd)
+                out = x + " " + y + " " + z + " " + str(count)
+                print out
+                save_fd.write(out+'\n')   
 
 
 def adaptive_lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
