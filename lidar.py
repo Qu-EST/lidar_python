@@ -52,6 +52,26 @@ if(control_fd<0):
     mems.close_mirror(mirror_fd)
     exit()
 
+def frange(end,start=0,inc=0,precision=1):
+    """A range function that accepts float increments."""
+    import math
+
+    if not start:
+        start = end + 0.0
+        end = 0.0
+    else: end += 0.0
+    
+    if not inc:
+        inc = 1.0
+    count = int(math.ceil((start - end) / inc))
+
+    L = [None] * count
+
+    L[0] = end
+    for i in (xrange(1,count)):
+        L[i] = L[i-1] + inc
+    return L
+
 
 def lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
     for x in range(args.xmin, args.xmax, args.xstep):
