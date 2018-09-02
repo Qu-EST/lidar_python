@@ -1,5 +1,5 @@
 from serial import Serial
-from Gpib import *
+
 
 #Mirror constants
 PORT = '/dev/ttyUSB0'
@@ -48,7 +48,8 @@ def check_status(mirror):
         return -1
 
 def set_pos(mirror, x, y):
-    mirror.write(GT+str(x)+' '+str(y)+OUT)
+    mirror.write('{}{:.3f} {:.3f}{}'.format(GT, x, y, OUT))
+#    mirror.write(GT+str(x)+' '+str(y)+OUT)
     if(check_status(mirror)==0):
         return 0
     return -1
