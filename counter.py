@@ -1,5 +1,6 @@
 import os
 import struct
+import time
 
 
 WAIT_NSTART = 2
@@ -15,7 +16,7 @@ def open_counter(int_time):
     
     return count_fd, control_fd
 
-def get_count(count_fd, control_fd):
+def get_count(count_fd, control_fd, int_time):
     count_fd.seek(0)
     done, = struct.unpack('<I', count_fd.read(4))
     if(done==1):
@@ -23,18 +24,18 @@ def get_count(count_fd, control_fd):
         count, = struct.unpack('<I', count_fd.read(4))
         return count
     else:
-        # sleep(INT_TIME)
-        return get_count(count_fd, control_fd)
+        time.sleep(int_time/1000)
+        return get_count(count_fd, control_fd, int_time)
 
 def change_ctrl(control_fd, ctrl_val):
     os.lseek(control_fd, 1, os.SEEK_SET)
     os.write(control_fd, chr(ctrl_val))
 
     
-def count(control_fd, count_fd):
+def count(control_fd, count_fd, int_time):
     change_ctrl(control_fd, WAIT_NSTART)
     change_ctrl(control_fd, WAIT_START)
-    cnt = get_count(count_fd, control_fd)
+    cnt = get_count(count_fd, control_fd, int_time)
     change_ctrl(control_fd, NWAIT_NSTART)
     return cnt
     
