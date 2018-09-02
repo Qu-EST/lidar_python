@@ -37,6 +37,13 @@ def count(control_fd, count_fd, int_time):
     change_ctrl(control_fd, WAIT_START)
     cnt = get_count(count_fd, control_fd, int_time)
     change_ctrl(control_fd, NWAIT_NSTART)
+    change_ctrl(control_fd, WAIT_NSTART)
+    change_ctrl(control_fd, WAIT_START)
+    
     return cnt
+
+def close(control_fd, count_fd):
+    os.close(control_fd)
+    count_fd.close()
     
 

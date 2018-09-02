@@ -81,7 +81,7 @@ def lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
             for z in frange(args.zmin, args.zmax, args.zmicro):
                 delay_fd.write('DLY {:.3f}'.format(z))
                 count = counter.count(control_fd, count_fd, args.tdc)
-                out = x + " " + y + " " + z + " " + str(count)
+                out = '{:.3f} {:.3f} {:.3f} {}'.format(x, y, z, count)
                 print out
                 save_fd.write(out+'\n')   
 
