@@ -78,8 +78,23 @@ def frange(end,start=0,inc=0,precision=1):
         L[i] = L[i-1] + inc
     return L
 
-def scan(args, fds, save=False):
-    pass
+def count_helper(fds):
+    fds.count_fd, fds.control_fd = counter.open_counter(args.tdc)
+    count = counter.count(fds.control_fd, fds.count_fd, args.tdc)
+    time.sleep(10.0/1000)
+    counter.close(fds.control_fd, fds.count_fd)
+    return count
+
+def scan(args, fds, zlist, save=False):
+    for z in zlist:
+        fds.delay_fd.write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+        if(args.verbose):
+            print out
+        if(save):
+            fds.save_fd.write(out+'\n')   
+            
 
 
 
@@ -90,16 +105,8 @@ def lidar(args, fds):
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(fds.mirror_fd, x, y)
-            for z in zlist:
-                fds.delay_fd.write('DLY {:.3f}'.format(z))
-                fds.count_fd, fds.control_fd = counter.open_counter(args.tdc)
-                count = counter.count(fds.control_fd, fds.count_fd, args.tdc)
-                time.sleep(10.0/1000)
-                counter.close(fds.control_fd, fds.count_fd)
-                out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
-                print out
-                fds.save_fd.write(out+'\n')   
-            z.reverse()
+            scan(args, fds, zlist, save=True)
+            zlist.reverse()
             
 
 def adaptive_lidar(args, fds):
