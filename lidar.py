@@ -77,19 +77,34 @@ def frange(end,start=0,inc=0,precision=1):
 
 
 def lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
-
+    snake = True
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(mirror_fd, x, y)
-            for z in frange(args.zmin, args.zmax, args.zmicro):
-                delay_fd.write('DLY {:.3f}'.format(z))
-                count_fd, control_fd = counter.open_counter(args.tdc)
-                count = counter.count(control_fd, count_fd, args.tdc)
-                time.sleep(10.0/1000)
-                counter.close(control_fd, count_fd)
-                out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
-                print out
-                save_fd.write(out+'\n')   
+            if(snake):
+                for z in frange(args.zmin, args.zmax, args.zmicro):
+                    delay_fd.write('DLY {:.3f}'.format(z))
+                    count_fd, control_fd = counter.open_counter(args.tdc)
+                    count = counter.count(control_fd, count_fd, args.tdc)
+                    time.sleep(10.0/1000)
+                    counter.close(control_fd, count_fd)
+                    out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+                    print out
+                    save_fd.write(out+'\n')
+                    snake = False
+            else:
+                z=args.zmax
+                while(z>args.zmin):
+                    delay_fd.write('DLY {:.3f}'.format(z))
+                    count_fd, control_fd = counter.open_counter(args.tdc)
+                    count = counter.count(control_fd, count_fd, args.tdc)
+                    time.sleep(10.0/1000)
+                    counter.close(control_fd, count_fd)
+                    out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+                    print out
+                    save_fd.write(out+'\n')
+                    snake = True
+                    z=z-args.zmicro
 
 
 def adaptive_lidar(args, delay_fd, mirror_fd, count_fd, control_fd, save_fd):
