@@ -3,7 +3,7 @@ from Gpib import *
 import mirror as mems
 import counter
 import time
-from collections import namedtuple
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-x","--xmin", type=float, help="X min value", default=-0.1)
@@ -25,23 +25,24 @@ parser.add_argument('-v', '--verbose', help='print the verbose', action='store_t
 
 args = parser.parse_args()
 
-fds = namedtyle(delay_fd=None, mirror_fd=None, save_fd=None, count_fd=None, controle_fd=None)
+fds = {'delay_fd':None, 'mirror_fd':None, 'save_fd':None, 'count_fd':None, 'control_fd':None}
 
-fds.delay_fd = Gpib(name=0, pad=5)
-if(fds.delay_fd<0):
+fds['delay_fd'] = Gpib(name=0, pad=5)
+
+if(fds['delay_fd']<0):
     print "unable to connect to delay"
     exit()
 
-fds.mirror_fd = mems.open_mirror()
-if(fds.mirror_fd<0):
+fds['mirror_fd'] = mems.open_mirror()
+if(fds['mirror_fd']<0):
     print "unable to connect to mirror"
     exit()
 
     
 #count_fd, control_fd = counter.open_counter(args.tdc)
 
-fds.save_fd = open(args.filename, 'w+')
-fds.save_fd.write('delay,y,x,counts\n')
+fds['save_fd'] = open(args.filename, 'w+')
+fds['save_fd'].write('delay,y,x,counts\n')
 
 
 
@@ -79,21 +80,21 @@ def frange(end,start=0,inc=0,precision=1):
     return L
 
 def count_helper(fds):
-    fds.count_fd, fds.control_fd = counter.open_counter(args.tdc)
-    count = counter.count(fds.control_fd, fds.count_fd, args.tdc)
+    fds['count_fd'], fds['control_fd'] = counter.open_counter(args.tdc)
+    count = counter.count(fds['control_fd'], fds['count_fd'], args.tdc)
     time.sleep(10.0/1000)
-    counter.close(fds.control_fd, fds.count_fd)
+    counter.close(fds['control_fd'], fds['count_fd'])
     return count
 
-def scan(args, fds, zlist, save=False):
+def scan(args, fds, zlist, x, y, save=False):
     for z in zlist:
-        fds.delay_fd.write('DLY {:.3f}'.format(z))
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
         count = count_helper(fds)
         out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
         if(args.verbose):
             print out
         if(save):
-            fds.save_fd.write(out+'\n')   
+            fds['save_fd'].write(out+'\n')   
             
 
 
@@ -104,10 +105,11 @@ def lidar(args, fds):
         zlist.append(z)
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
-            mems.set_pos(fds.mirror_fd, x, y)
-            scan(args, fds, zlist, save=True)
+            mems.set_pos(fds['mirror_fd'], x, y)
+            scan(args, fds, zlist, x, y, save=True)
             zlist.reverse()
-            
+
+            time.sleep(0.1)
 
 def adaptive_lidar(args, fds):
     adaptive = None
@@ -127,8 +129,8 @@ else:
     adaptive_lidar(args, fds)
 
 
-mems.close_mirror(mirror_fd)
-delay_fd.write('dly 0')
+mems.close_mirror(fds['mirror_fd'])
+fds['delay_fd'].write('dly 0')
 
 
 
