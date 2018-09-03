@@ -82,6 +82,7 @@ def scan(args, fds, save=False):
     pass
 
 
+
 def lidar(args, fds):
     zlist=[]
     for z in frange(args.zmin, args.zmax, args.zmicro):
