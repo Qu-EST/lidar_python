@@ -101,15 +101,16 @@ def scan(args, fds, zlist, x, y, save=False):
 
 def lidar(args, fds):
     zlist=[]
+    zlist.reverse()
     for z in frange(args.zmin, args.zmax, args.zmicro):
         zlist.append(z)
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(fds['mirror_fd'], x, y)
             scan(args, fds, zlist, x, y, save=True)
-            zlist.reverse()
+            
 
-            time.sleep(0.1)
+            
 
 def adaptive_lidar(args, fds):
     adaptive = None
