@@ -86,7 +86,8 @@ def count_helper(fds):
     counter.close(fds['control_fd'], fds['count_fd'])
     return count
 
-def scan(args, fds, zlist, x, y, save=False):
+def scan(args, fds, zlist, x, y):
+
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
         count = count_helper(fds)
@@ -100,24 +101,105 @@ def scan(args, fds, zlist, x, y, save=False):
 
 
 def lidar(args, fds):
+
     zlist=[]
-    zlist.reverse()
     for z in frange(args.zmin, args.zmax, args.zmicro):
         zlist.append(z)
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(fds['mirror_fd'], x, y)
-            scan(args, fds, zlist, x, y, save=True)
+            scan(args, fds, zlist, x, y)
+            # zlist.reverse()
+
+
             
 
+def get_peak(fds, zlist):
+    '''return a adaptive'''
+    adaptive = {}
+    zmax_count = zlist[0]
+    for z in zlist:
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        adaptive[z] = count
+        if(adaptive[zmax_count]<count):
+            zmax_count = z
+    return zmax_count
+
+def fine_scan(args, fds, x, y , fzmin, fzmax):
+    '''do a fine scan, return a adaptive value'''
+    zmax_counts_pos = 0
+    delay_counts=[]
+    zlist = [z for z in frange(fzmin, fzmax, args.zmicro)]
+    for z in zlist:
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.append([z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = len(delay_counts) -1
+
+    while(zmax_counts_pos==len(delay_counts)-1):
+        last_pos=True
+        z = delay_counts[len(delay_counts)-1][0]+args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.append([z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = len(delay_counts) -1
+    if(last_pos):
+        z = delay_counts[len(delay_counts)-1][0]+args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.append([z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = len(delay_counts) -1
+
+    while(zmax_counts_pos==0):
+        init_pos = True
+        z = delay_counts[0][0]-args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.insert(0,[z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = 0
+        else:
+            zmax_counts_pos+=zmax_count_pos
+    if(init_pos):
+        z = delay_counts[0][0]-args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.insert(0,[z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = 0
+        else:
+            zmax_counts_pos+=zmax_counts_pos
+    checkone = delay_counts[zmax_counts_pos-1][1]-delay_counts[zmax_counts_pos-2][1]
+    checktwo = delay_counts[zmax_counts_pos+1][1]-delay_counts[zmax_counts_pos+2][1]
+    if (checkone>0 and checktwo>0):
+        return delay_counts[zmax_counts_pos][0]
+    else:
+        return None
+            
             
 
 def adaptive_lidar(args, fds):
     adaptive = None
-    if(adaptive):
-        pass
-    if(adaptive==None):
-        pass
+    for x in frange(args.xmin, args.xmax, args.steps):
+        for y in frange(args.ymin, args.ymax, args.ystep):
+            mems.set_pos(fds['mirror_fd'], x, y)
+            
+            if(adaptive):
+                adpative = fine_scan(args, fds, x, y, adaptive-2*args.zmicro, adaptive+2*args.zmicro)
+                pass
+            if(adaptive==None):
+                if(verbose):
+                    print "Doing a macro scan"
+                zlist = []
+                for z in fange(args.zmin, args.zmax, args.zmacro):
+                    zlist.append(z)
+                peak = get_peak(fds, zlist)
+                adaptive = fine_scan(args, fds, x, y, peak-15, peak+15)
+                #adaptive = do adaptive scan
     
 
 

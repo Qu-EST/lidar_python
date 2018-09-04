@@ -25,7 +25,7 @@ def open_mirror():
     status = mirror.readline()
 
     #check if the terminal mode is enabled
-    if((status[:12]=='MTI-Device M') or (status[:4]=='MTI-')):
+    if( status[:4]=='MTI-'):
 
         #set the MIrror parameters
         mirror.write(VD)
