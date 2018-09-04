@@ -86,7 +86,8 @@ def count_helper(fds):
     counter.close(fds['control_fd'], fds['count_fd'])
     return count
 
-def scan(args, fds, zlist, x, y, save=False):
+def scan(args, fds, zlist, x, y):
+
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
         count = count_helper(fds)
@@ -100,23 +101,56 @@ def scan(args, fds, zlist, x, y, save=False):
 
 
 def lidar(args, fds):
-    zlist=[]
+    zlist = []
     for z in frange(args.zmin, args.zmax, args.zmicro):
         zlist.append(z)
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(fds['mirror_fd'], x, y)
-            scan(args, fds, zlist, x, y, save=True)
+            scan(args, fds, zlist, x, y)
             zlist.reverse()
 
             time.sleep(0.1)
 
+def get_peak(fds, zlist):
+    '''return a adaptive'''
+    adaptive = {}
+    zmax_count = zlist[0]
+    for z in zlist:
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        adaptive[z] = count
+        if(adaptive[zmax_count]<count):
+            zmax_count = z
+    return zmax_count
+
+def fine_scan(args, fds, x, y , fzmin, fzmax):
+    '''do a fine scan, return a adaptive value'''
+    zmax_count = fzmin
+
+    return zmax_count
+    pass
+            
+            
+
 def adaptive_lidar(args, fds):
     adaptive = None
-    if(adaptive):
-        pass
-    if(adaptive==None):
-        pass
+    for x in frange(args.xmin, args.xmax, args.steps):
+        for y in frange(args.ymin, args.ymax, args.ystep):
+            mems.set_pos(fds['mirror_fd'], x, y)
+            
+            if(adaptive):
+                adpative = fine_scan(args, fds, x, y, adaptive-2*args.zmicro, adaptive+2*args.zmicro)
+                pass
+            if(adaptive==None):
+                if(verbose):
+                    print "Doing a macro scan"
+                zlist = []
+                for z in fange(args.zmin, args.zmax, args.zmacro):
+                    zlist.append(z)
+                peak = get_peak(fds, zlist)
+                adaptive = fine_scan(args, fds, x, y, peak-15, peak+15)
+                #adaptive = do adaptive scan
     
 
 
