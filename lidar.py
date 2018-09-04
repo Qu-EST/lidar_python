@@ -126,10 +126,57 @@ def get_peak(fds, zlist):
 
 def fine_scan(args, fds, x, y , fzmin, fzmax):
     '''do a fine scan, return a adaptive value'''
-    zmax_count = fzmin
+    zmax_counts_pos = 0
+    delay_counts=[]
+    zlist = [z for z in frange(fzmin, fzmax, args.zmicro)]
+    for z in zlist:
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.append([z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = len(delay_counts) -1
 
-    return zmax_count
-    pass
+    while(zmax_counts_pos==len(delay_counts)-1):
+        last_pos=True
+        z = delay_counts[len(delay_counts)-1][0]+args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.append([z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = len(delay_counts) -1
+    if(last_pos):
+        z = delay_counts[len(delay_counts)-1][0]+args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.append([z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = len(delay_counts) -1
+
+    while(zmax_counts_pos==0):
+        init_pos = True
+        z = delay_counts[0][0]-args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.insert(0,[z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = 0
+        else:
+            zmax_counts_pos+=zmax_count_pos
+    if(init_pos):
+        z = delay_counts[0][0]-args.zmicro
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        count = count_helper(fds)
+        delay_counts.insert(0,[z, count])
+        if(delay_counts[zmax_counts_pos][1]<count):
+            zmax_counts_pos = 0
+        else:
+            zmax_counts_pos+=zmax_counts_pos
+    checkone = delay_counts[zmax_counts_pos-1][1]-delay_counts[zmax_counts_pos-2][1]
+    checktwo = delay_counts[zmax_counts_pos+1][1]-delay_counts[zmax_counts_pos+2][1]
+    if (checkone>0 and checktwo>0):
+        return delay_counts[zmax_counts_pos][0]
+    else:
+        return None
             
             
 
