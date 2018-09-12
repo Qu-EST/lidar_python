@@ -161,7 +161,7 @@ def fine_scan(args, fds, x, y , fzmin, fzmax):
         if(delay_counts[zmax_counts_pos][1]<count):
             zmax_counts_pos = 0
         else:
-            zmax_counts_pos+=zmax_count_pos
+            zmax_counts_pos+=zmax_counts_pos
     if(init_pos):
         z = delay_counts[0][0]-args.zmicro
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
