@@ -20,7 +20,8 @@ def get_count(count_fd, control_fd, int_time):
     count_fd.seek(0)
     done, = struct.unpack('<I', count_fd.read(4))
     if(done==1):
-        os.write(control_fd, chr(WAIT_NSTART))
+        change_ctrl(control_fd, WAIT_NSTART)
+        #os.write(control_fd, chr(WAIT_NSTART))
         count, = struct.unpack('<I', count_fd.read(4))
         return count
     else:
@@ -29,7 +30,8 @@ def get_count(count_fd, control_fd, int_time):
         count_fd.seek(0)
         done, = struct.unpack('<I', count_fd.read(4))
         if(done==1):
-            os.write(control_fd, chr(WAIT_NSTART))
+            change_ctrl(control_fd, WAIT_NSTART)
+#            os.write(control_fd, chr(WAIT_NSTART))
             count, = struct.unpack('<I', count_fd.read(4))
             return count
         else:
