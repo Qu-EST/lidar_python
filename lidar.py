@@ -8,12 +8,12 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("-x","--xmin", type=float, help="X min value", default=-0.1)
 parser.add_argument("-X", "--xmax", type=float, help="X max value", default =0.1)
-parser.add_argument("-y", "--ymin", type=float, help="Y min value", default=-0.3)
+parser.add_argument("-y", "--ymin", type=float, help="Y min value", default=-0.1)
 parser.add_argument("-Y", "--ymax", type=float, help="Y max value", default=0.1)
 parser.add_argument("-z", "--zmin", type=float, help="Z min value", default=-50)
 parser.add_argument("-Z", "--zmax", type=float, help="Z max value", default=150)
-parser.add_argument('-s', '--xstep', type=float, help='x step size', default=0.04)
-parser.add_argument('-u', '--ystep', type=float, help='y stepsize', default=0.04)
+parser.add_argument('-s', '--xstep', type=float, help='x step size', default=0.02)
+parser.add_argument('-u', '--ystep', type=float, help='y stepsize', default=0.02)
 parser.add_argument('-m', '--zmicro', type=float, help='z micro step size', default=2)
 parser.add_argument('-M', '--zmacro', type=float, help='z Macro step size', default=20)
 parser.add_argument('-f', '--filename', type=str, help='filename to save the data', default='lidar.csv')
@@ -92,15 +92,19 @@ def scan(args, fds, zlist, x, y):
 
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
-        #time.sleep(50.0/1000)
+        time.sleep(50.0/1000)
         if(z==args.zmin):
-            time.sleep(1)
+            delay_wait = 20*(args.zmax - args.zmin)
+            time.sleep(delay_wait/1000)
+           
+            print delay_wait
             count = count_helper(fds)
-            # out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+            out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
             # fds['save_fd'].write(out+'\n')
-            # if(args.verbose):
-            #    print out
-            time.sleep(250.0/1000)
+            if(args.verbose):
+                print out
+            
+            time.sleep(1000/1000)
             
         
             
@@ -134,25 +138,45 @@ def get_peak(fds, zlist):
     zmax_count = zlist[0]
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        if(z == args.zmin):
+            
+            time.sleep(1)
+            count = count_helper(fds)
+            adaptive[z] = count
+            out =  '{:.3f}, {}'.format(z,  count)
+           
+            print out
+        time.sleep(1000/1000)
         count = count_helper(fds)
         adaptive[z] = count
+        out =  '{:.3f}, {}'.format(z,  count)
+        if(args.verbose):
+            print out
+        
         if(adaptive[zmax_count]<count):
             zmax_count = z
     return zmax_count
 
 def fine_scan(args, fds, x, y , fzmin, fzmax):
     '''do a fine scan, return a adaptive value'''
+    print "Doing Fine Scan"
     zmax_counts_pos = 0
     delay_counts=[]
     zlist = [z for z in frange(fzmin, fzmax, args.zmicro)]
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        time.sleep(50/1000)
+        if(z == fzmin):
+            count = count_helper(fds)
+            out =  '{:.3f}, {}'.format(z,  count)
+            print out
+            time.sleep(2)
         count = count_helper(fds)
         out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
         fds['save_fd'].write(out+'\n')
         if(args.verbose):
             print out
-
+            
         delay_counts.append([z, count])
         if(delay_counts[zmax_counts_pos][1]<count):
             zmax_counts_pos = len(delay_counts) -1
@@ -235,8 +259,11 @@ def adaptive_lidar(args, fds):
                 if(args.verbose):
                     print "Doing a macro scan"
                 zlist = []
+                
                 for z in frange(args.zmin, args.zmax, args.zmacro):
                     zlist.append(z)
+                
+                
                 peak = get_peak(fds, zlist)
                 adaptive = fine_scan(args, fds, x, y, peak-15, peak+15)
                 #adaptive = do adaptive scan

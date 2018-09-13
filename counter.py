@@ -24,6 +24,7 @@ def get_count(count_fd, control_fd, int_time):
         count, = struct.unpack('<I', count_fd.read(4))
         return count
     else:
+        
         time.sleep(float(int_time)+20.0/1000)
         count_fd.seek(0)
         done, = struct.unpack('<I', count_fd.read(4))
