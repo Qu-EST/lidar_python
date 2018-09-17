@@ -92,19 +92,19 @@ def scan(args, fds, zlist, x, y):
 
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
-        time.sleep(50.0/1000)
-        if(z==args.zmin):
-            delay_wait = 10*(args.zmax - args.zmin)
-            time.sleep(delay_wait/1000)
-           
-           # print delay_wait
-            count = count_helper(fds)
-            out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
-            # fds['save_fd'].write(out+'\n')
-            if(args.verbose):
-                print out
+        time.sleep(80.0/1000)
+        # if(z==args.zmin):
             
-            time.sleep(1000/1000)
+        #     time.sleep(50/1000)
+           
+          
+        #     count = count_helper(fds)
+        #     out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+        #     # fds['save_fd'].write(out+'\n')
+        #     if(args.verbose):
+        #         print out
+            
+        #     time.sleep(1000/1000)
             
         
             
@@ -127,7 +127,7 @@ def lidar(args, fds):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(fds['mirror_fd'], x, y)
             scan(args, fds, zlist, x, y)
-           # zlist.reverse()
+            zlist.reverse()
 
 
             

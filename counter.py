@@ -13,6 +13,7 @@ def open_counter(int_time):
     control_fd = os.open('/dev/xillybus_timeout_control', os.O_WRONLY)
     if(control_fd>0):
        os.write(control_fd, chr(int_time))
+       change_ctrl(control_fd, WAIT_NSTART)
     
     return count_fd, control_fd
 
@@ -21,12 +22,13 @@ def get_count(count_fd, control_fd, int_time):
     done, = struct.unpack('<I', count_fd.read(4))
     if(done==1):
         change_ctrl(control_fd, WAIT_NSTART)
+
         #os.write(control_fd, chr(WAIT_NSTART))
         count, = struct.unpack('<I', count_fd.read(4))
         return count
     else:
         
-        time.sleep(float(int_time)+20.0/1000)
+        time.sleep((float(int_time)+20.0)/1000)
         count_fd.seek(0)
         done, = struct.unpack('<I', count_fd.read(4))
         if(done==1):
@@ -45,12 +47,14 @@ def change_ctrl(control_fd, ctrl_val):
 def count(control_fd, count_fd, int_time):
     change_ctrl(control_fd, WAIT_NSTART)
     change_ctrl(control_fd, WAIT_START)
-    cnt = get_count(count_fd, control_fd, int_time)
-    change_ctrl(control_fd, NWAIT_NSTART)
+    wait_time = (float(int_time))/1000
+    time.sleep(wait_time)
+    count_fd.seek(0)
+    done, = struct.unpack('<I', count_fd.read(4))
     change_ctrl(control_fd, WAIT_NSTART)
-    change_ctrl(control_fd, WAIT_START)
-    
-    return cnt
+    count, = struct.unpack('<I', count_fd.read(4))
+    change_ctrl(control_fd, NWAIT_NSTART)
+    return count
 
 def close(control_fd, count_fd):
     os.close(control_fd)
