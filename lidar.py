@@ -21,6 +21,7 @@ parser.add_argument('-t', '--tdc', type=int, help='tdc integration time', defaul
 parser.add_argument('-p', '--peakcheck', type=float, help='peak check', default=10)
 parser.add_argument('-l', '--lidar', help='doing a normal lidar', action='store_true')
 parser.add_argument('-v', '--verbose', help='print the verbose', action='store_true')
+parser.add_argument('--zlast', help='zlast or the initial position of the delay', defalut=0) 
 
 
 args = parser.parse_args()
@@ -92,10 +93,12 @@ def scan(args, fds, zlist, x, y):
 
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
-        time.sleep(80.0/1000)
-        # if(z==args.zmin):
+        wait_time = abs(zlist[1] - zlist[2])*20
+        #print wait_time
+        time.sleep(wait_time/1000)
+        if(bool(z == args.zmin) or  bool(z == args.zmax)):
             
-        #     time.sleep(50/1000)
+            time.sleep(100/1000)
            
           
         #     count = count_helper(fds)
@@ -132,21 +135,18 @@ def lidar(args, fds):
 
             
 
-def get_peak(fds, zlist):
+def get_peak(args, fds, zlist):
     '''return a adaptive'''
     adaptive = {}
     zmax_count = zlist[0]
+    zwait_step = abs(zlist[1] - zlist[2])*20
     for z in zlist:
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
         if(z == args.zmin):
+            zwait = abs((args.zlast-z)*20)
+            time.sleep(zwait/1000)
             
-            time.sleep(1)
-            count = count_helper(fds)
-            adaptive[z] = count
-            out =  '{:.3f}, {}'.format(z,  count)
-           
-            print out
-        time.sleep(1000/1000)
+        time.sleep(zwait_step/1000)
         count = count_helper(fds)
         adaptive[z] = count
         out =  '{:.3f}, {}'.format(z,  count)
@@ -264,8 +264,10 @@ def adaptive_lidar(args, fds):
                     zlist.append(z)
                 
                 
-                peak = get_peak(fds, zlist)
+                peak = get_peak(args, fds, zlist)
+                args.zlast = max(zlist)
                 adaptive = fine_scan(args, fds, x, y, peak-15, peak+15)
+                
                 #adaptive = do adaptive scan
     
 
