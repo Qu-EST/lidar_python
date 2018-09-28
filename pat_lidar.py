@@ -5,6 +5,7 @@ import counter
 import time
 
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-x","--xmin", type=float, help="X min value", default=-0.1)
 parser.add_argument("-X", "--xmax", type=float, help="X max value", default =0.1)
@@ -56,11 +57,12 @@ def frange(end,start=0,inc=0,precision=1):
         inc = 1.0
     count = int(math.ceil((start - end) / inc))
 
-    L = [None] * count
-
-    L[0] = end
+   # L = [None] * count
+    L = []
+    L.append(float(end))
+   # L.append(end)
     for i in (xrange(1,count)):
-        L[i] = L[i-1] + inc
+        L.append(L[i-1] + inc)
     return L
 
 def count_helper(fds):
@@ -71,138 +73,133 @@ def count_helper(fds):
         return count
     else:
         return count_helper(fds)
-def scan(args, fds, zlist, x, y):
-
+def scan(zmin,zmax,step,zlast, fds, x, y):
+    zlist = [z for z in frange(zmin,zmax,step)]
+    z_max_pos = -100000
+    max_counts = 0
+    delay_counts = []
     for z in zlist:
+        
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
-        wait_time = abs(zlist[1] - zlist[2])*20
+        wait_time = abs(z - zlast)*20
         #print wait_time
         time.sleep(wait_time/1000)
-        if(bool(z == args.zmin)):
-            time.sleep((args.zmax - args.zmin)*20/1000)
+        zlast = z
+        count = count_helper(fds)
+        delay_counts.append([z,count])
+        out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+        fds['save_fd'].write(out+'\n')
+        if(args.verbose):
+            print out
+        if (count > max_counts):
+            max_counts = count
+            z_max_pos = z
+    return z_max_pos
+def test_peak (delay_counts, zmax_counts_pos):
+     checkone = delay_counts[zmax_counts_pos-1][1]-delay_counts[zmax_counts_pos-2][1]
+     checktwo = delay_counts[zmax_counts_pos+1][1]-delay_counts[zmax_counts_pos+2][1]
+   
+     if (checkone>0 and checktwo>0):
+        return 1
+     else:
+        return 0
+def test_scan(zmin,zmax,step,zlast, fds, x, y):
+    zlist = [z for z in frange(zmin,zmax,step)]
+    print "Doing Fine Scan"
+    zmax_counts_pos = 0
+    delay_counts=[]
+    
+   
+    for z in zlist:
+        
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        wait_time = abs(z - zlast)*20
+        #print wait_time
+        time.sleep(wait_time/1000)
+        zlast = z
         count = count_helper(fds)
         out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
         fds['save_fd'].write(out+'\n')
         if(args.verbose):
             print out
-
-def lidar(args, fds):
-    zlist = [z for z in frange(args.zmin, args.zmax, args.zmicro)]
-    for x in frange(args.xmin, args.xmax, args.xstep):
-        for y in frange(args.ymin, args.ymax, args.ystep):
-            mems.set_pos(fds['mirror_fd'], x, y)
-            scan(args, fds, zlist, x, y)
-            #zlist.reverse()
-
-def get_peak(args, fds, zlist):
-    '''return a adaptive'''
-    adaptive = {}
-    zmax_count = zlist[0]
-    zwait_step = abs(zlist[1] - zlist[2])*20
-    for z in zlist:
-        fds['delay_fd'].write('DLY {:.3f}'.format(z))
-        if(z == args.zmin):
-            zwait = abs((args.zlast-z)*20)
-            time.sleep(zwait/1000)
-            
-        time.sleep(zwait_step/1000)
-        count = count_helper(fds)
-        adaptive[z] = count
-        out =  '{:.3f}, {}'.format(z,  count)
-        if(args.verbose):
-            print out
-        
-        if(adaptive[zmax_count]<count):
-            zmax_count = z
-    return zmax_count
-
-def fine_scan_counter(args, fds, x, y, z, zwait):
-    '''do the counting and scan for the fine_scan'''
-    fds['delay_fd'].write('DLY {:.3f}'.format(z))
-    if(z == fzmin):
-        #add adaptive sleep later
-        time.sleep(2)
-    time.sleep(zwait/1000)
-    count = count_helper(fds)
-    out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
-    fds['save_fd'].write(out+'\n')
-    if(args.verbose):
-        print out
-    return count
-        
-
-def fine_scan(args, fds, x, y , fzmin, fzmax):
-    '''do a fine scan, return a adaptive value'''
-    print "Doing Fine Scan"
-    zmax_counts_pos = 0
-    delay_counts=[]
-    zlist = [z for z in frange(fzmin, fzmax, args.zmicro)]
-    #calculate the zwait
-    zwait = 0 ######################################################
-    for z in zlist:
-        count = fine_scan_counter(args, fds, x, y, z, zwait)
         delay_counts.append([z, count])
         if(delay_counts[zmax_counts_pos][1]<count):
             zmax_counts_pos = len(delay_counts) -1
     last_pos=False
     init_pos=False
     zwait = 0 ######################################################
-    while(zmax_counts_pos==len(delay_counts)-1):
-        last_pos=True
-        z = delay_counts[len(delay_counts)-1][0]+args.zmicro
-        count = fine_scan_counter(args, fds, x, y, z, zwait)
+    while(zmax_counts_pos>=len(delay_counts)-1 or zmax_counts_pos==len(delay_counts)-2 ):
+       
+        #last_pos=True
+        z = delay_counts[len(delay_counts)-1][0]+step
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        wait_time = abs(z - zlast)*20
+    
+        time.sleep(wait_time/1000)
+        zlast = z
+        count = count_helper(fds)
+        out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+        fds['save_fd'].write(out+'\n')
+        if(args.verbose):
+            print out
         delay_counts.append([z, count])
         if(delay_counts[zmax_counts_pos][1]<count):
             zmax_counts_pos = len(delay_counts) -1
-    if(last_pos):
-        z = delay_counts[len(delay_counts)-1][0]+args.zmicro
-        count = fine_scan_counter(args, fds, x, y, z, zwait)
-        delay_counts.append([z, count])
-        if(delay_counts[zmax_counts_pos][1]<count):
-            zmax_counts_pos = len(delay_counts) -1
-    zwait = 0 ######################################################
-    while(zmax_counts_pos==0):
-        init_pos = True
-        z = delay_counts[0][0]-args.zmicro
-        count = fine_scan_counter(args, fds, x, y, z, zwait)
+   
+    
+    while(zmax_counts_pos==0 or zmax_counts_pos ==1):
+        #init_pos = True
+       
+    
+        z = delay_counts[0][0]-step
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        wait_time = abs(z - zlast)*20
+        #print wait_time
+        time.sleep(wait_time/1000)
+        zlast = z
+        count = count_helper(fds)
+        out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+        fds['save_fd'].write(out+'\n')
+        if(args.verbose):
+            print out
         delay_counts.insert(0,[z, count])
+        zmax_counts_pos += 1
         if(delay_counts[zmax_counts_pos][1]<count):
             zmax_counts_pos = 0
-        else:
-            zmax_counts_pos+=1
-    if(init_pos):
-        z = delay_counts[0][0]-args.zmicro
-        count = fine_scan_counter(args, fds, x, y, z, zwait)
-        delay_counts.insert(0,[z, count])
-        if(delay_counts[zmax_counts_pos][1]<count):
-            zmax_counts_pos = 0
-        else:
-            zmax_counts_pos+=1
-    checkone = delay_counts[zmax_counts_pos-1][1]-delay_counts[zmax_counts_pos-2][1]
-    checktwo = delay_counts[zmax_counts_pos+1][1]-delay_counts[zmax_counts_pos+2][1]
-    if (checkone>0 and checktwo>0):
-        return delay_counts[zmax_counts_pos][0]
+       
+    return [delay_counts[zmax_counts_pos][0],zlast,delay_counts[zmax_counts_pos][1]]
+    if(test_peak(delay_counts,zmax_counts_pos) == 1):
+        return [delay_counts[zmax_counts_pos][0],zlast]
     else:
-        return None
-            
-            
+        return [-1111,zlast]
 
-def adaptive_lidar(args, fds):
-    adaptive = None
+def lidar(args, fds):
+    #zlist = [z for z in frange(fzmin, fzmax, args.zmicro)]
+    zmin = args.zmin
+    zmax = args.zmax
+    step = args.zmicro
+    macro_step = args.zmacro
+    zlast = 0
+    prev_peak = -1111
     for x in frange(args.xmin, args.xmax, args.xstep):
         for y in frange(args.ymin, args.ymax, args.ystep):
             mems.set_pos(fds['mirror_fd'], x, y)
-            
-            if(adaptive):
-                adpative = fine_scan(args, fds, x, y, adaptive-2*args.zmicro, adaptive+2*args.zmicro)
-                
-            if(adaptive==None):
-                if(args.verbose):
-                    print "Doing a macro scan"
-                zlist = [z for z in frange(args.zmin, args.zmax, args.zmacro)]
-                peak = get_peak(args, fds, zlist)
-                args.zlast = max(zlist)
-                adaptive = fine_scan(args, fds, x, y, peak-15, peak+15)
+            if(prev_peak != -1111):
+                data = test_scan(prev_peak - 2*step,prev_peak + 2*step,step,zlast,fds,x,y)
+                prev_peak = data[0]
+                zlast = data[1]
+                if (data[2] < 100):
+                    prev_peak = -1111
+            if(prev_peak == -1111):
+                 prev_peak = scan(zmin,zmax,macro_step,zlast, fds, x, y)
+                 zlast = zmax
+                 data = test_scan(prev_peak - 10*step,prev_peak + 10*step,step,zlast,fds,x,y)
+                 
+                 prev_peak = data[0]
+                 zlast = data[1]
+
+            out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(prev_peak, y, x, data[2])
+            print out
 
 start = time.clock()
 if(args.verbose):
