@@ -57,11 +57,19 @@ def close(control_fd, count_fd, status_fd):
 
     
 def get_count(dwell=100, sweep=1000):
-    count_fd, control_fd = open_counter(dwell, sweep)
+    count_fd, control_fd, status_fd = open_counter(dwell, sweep)
     counts = count(control_fd, count_fd, status_fd, sweep)
     close(control_fd, count_fd, status_fd)
     if counts!=None:
         return counts
     else:
         return get_count(dwell, sweep)
+
+
+def test_sync(dwell=100, sweep=1000):
+    count_fd, control_fd, status_fd = open_counter(dwell, sweep)
+    change_ctrl(control_fd, WAIT_NSTART)
+    change_ctrl(control_fd, WAIT_START)
+    time.sleep(100)
+    close(count_fd, control_fd, status_fd)
 
