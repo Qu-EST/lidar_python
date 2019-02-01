@@ -69,6 +69,7 @@ def count_helper(fds):
     fds['count_fd'], fds['control_fd'] = counter.open_counter(args.tdc)
     count = counter.count(fds['control_fd'], fds['count_fd'], args.tdc)
     counter.close(fds['control_fd'], fds['count_fd'])
+    time.sleep(args.tdc/1000000)
     if count!=None:
         return count
     else:
@@ -174,7 +175,23 @@ def test_scan(zmin,zmax,step,zlast, fds, x, y):
         return [delay_counts[zmax_counts_pos][0],zlast,delay_counts[zmax_counts_pos][1]]
     else:
         return [-1111,zlast,delay_counts[zmax_counts_pos][1]]
+def mirrorScan(xlist, ylist,zlist):
+    for z in zlist:
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        time.sleep(1000/1000)
+        for x in xlist:
+            for y in ylist:
+                mems.set_pos(fds['mirror_fd'], x, y)
+                time.sleep(100/1000)
+                count = count_helper(fds)
+                out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+                fds['save_fd'].write(out+'\n')
+                if(args.verbose ):
+                    print out
+    
 
+    
+    
 def lidar(args, fds):
     #zlist = [z for z in frange(fzmin, fzmax, args.zmicro)]
     zmin = args.zmin
@@ -183,28 +200,27 @@ def lidar(args, fds):
     macro_step = args.zmacro
     zlast = 0
     prev_peak = -1111
-    for x in frange(args.xmin, args.xmax, args.xstep):
-        for y in frange(args.ymin, args.ymax, args.ystep):
-            mems.set_pos(fds['mirror_fd'], x, y)
-            ######### start of the adaptive
-            if(prev_peak != -1111):
-                data = test_scan(prev_peak - 2*step,prev_peak + 2*step,step,zlast,fds,x,y)
-                prev_peak = data[0]
-                zlast = data[1]
-                #if (data[2] < 20):
-                   # prev_peak = -1111
-            if(prev_peak == -1111):
-                 prev_peak = scan(zmin,zmax,macro_step,zlast, fds, x, y)
-                 prev_peak = -1111
-                 zlast = zmax
-                 #data = test_scan(prev_peak - 10*step,prev_peak + 10*step,step,zlast,fds,x,y)
-                 
-                 #prev_peak = data[0]
-                 #zlast = data[1]
-            ################3 end of adaptive
+    xlist = [x for x in frange(args.xmin, args.xmax, args.xstep)]
+    ylist = [y for y in frange(args.ymin, args.ymax, args.ystep)]
+    zlist = [z for z in frange(zmin,zmax,step)]
+    for z in zlist:
+        
+        fds['delay_fd'].write('DLY {:.3f}'.format(z))
+        time.sleep(0.1)
+        for x in frange(args.xmin, args.xmax, args.xstep):
+            wait_mirror = 0
+            for y in frange(args.ymin, args.ymax, args.ystep):
+                mems.set_pos(fds['mirror_fd'], x, y)
+                #time.sleep(0.5) #wait time to follow beam
+                if (wait_mirror == 0):
+                    time.sleep(0.05)
+                    wait_mirror = 1
+                count = count_helper(fds)
+                out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+                fds['save_fd'].write(out+'\n')
+                if(args.verbose ):
+                    print out
 
-            #out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(prev_peak, y, x, data[2])
-            #print out
 
 start = time.clock()
 if(args.verbose):
