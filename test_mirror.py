@@ -25,7 +25,9 @@ i = -0.25
 j = 0.06
 k = -0.05
 l = 0.15
-ystep = 0.004
+
+ystep = 0.0
+04
 xstep = 0.05
 #time.sleep(1)
 ylist = [y for y in frange(k, l,ystep)]
@@ -43,5 +45,5 @@ for y in ylist:
         
 time.sleep(1)
 m.set_pos(mems,i,k)   
-#m.set_pos(mems, 0,0)
-#m.close_mirror(mems)
+m.set_pos(mems, 0,0)
+m.close_mirror(mems)

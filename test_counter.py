@@ -3,7 +3,7 @@ import counter as c
 import time
 
 mems = m.open_mirror()
-m.set_pos(mems,0.01 ,0.3)
+m.set_pos(mems,-0.02 ,0.3)
 
 start = time.clock()
 for x in range(0,500):
