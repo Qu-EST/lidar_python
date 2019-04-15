@@ -3,6 +3,7 @@
 from threading import Thread, Event
 from queue import Queue
 from LidarData import LidarData
+import struct
 
 
 class ReaderThread(Thread):
@@ -12,13 +13,18 @@ class ReaderThread(Thread):
         self.switch = Event()
         self.switch.clear()
         # open the fifo
-
+        self.count_file = open(self.lidar_data.photoncount_file, 'rb')
 
 
     def run(self):
         '''the following will be called when the thread starts'''
         while not self.switch.is_set():
-            pass
+            raw_count = self.count_file.read(4)
+            count = struct.unpack('<I', raw_count)
+            if(count != 0xDEADBEEF):
+                print(count)
+                self.lidar_data.data_queue.put
+            
         # close the fifo
 
     def off(self):

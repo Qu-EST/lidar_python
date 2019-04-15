@@ -1,5 +1,6 @@
 from queue import Queue
 from queue import LifoQueue
+from threading import Condition
 
 class Singleton(type):
     '''Metaclass for the singleton'''
@@ -18,7 +19,10 @@ class LidarData(metaclass = Singleton):
         self.data_queue = Queue(1000)
         self.args = None
         self.control_file = '/dev/xillybun_timeout_control'
-        self.photoncount_file = '/dev/xillybun_status_photoncount'
+        self.photoncount_file = '/dev/xillybun_status_photoncount' # change it change it changeit
+        self.current_z = None
+        self.frame_done = Condition()
+        self.status_file = '/dev/xillybun_status_photoncount'
         # self.dual_time = None
         # self.file_name = None
         # self.pixel_count = None
