@@ -1,7 +1,8 @@
 import argparse
 from LidarData import LidarData
-from Gpib import *
-
+#from Gpib import *
+from ReaderThread import ReaderThread
+from WriterThread import WriterThread
 
 
 
@@ -49,10 +50,12 @@ def frange(end,start=0,inc=0,precision=1):
 
 
 # start the writerthread
-
+writer_thread = WriterThread()
+writer_thread.start()
 
 # start the reader thread
-
+reader_thread = ReaderThread()
+reader_thread.start()
 
 zlist = [z for z in frange(args.zmin,args.zmax,args.zmacro)]
 
@@ -62,7 +65,23 @@ for z in zlist:
     
     #send a start pulse
 
+    # wait for the writer to complete the frame
+    data.frame_done.wait()
     pass
+
+
+#send signals to close the thread
+reader_thread.off()
+writer_thread.off()
+
+
+#wait for the threads to complete i,e call join()
+reader_thread.join()
+writer_thread.join()
+
+
+#exit
+
 
 
 
