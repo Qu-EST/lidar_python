@@ -24,8 +24,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--dual_time', type=int, help='dual time to count the photons', default=100)
 parser.add_argument('-p', '--pixel_count', type=int, help='number of pixels in a frame', default=1000)
 parser.add_argument('-f', '--file_name', type=str, help='filename ot save the data', default='lidar.csv')
-parser.add_argument('-z', 'zmin', type=float, help='Minimum delay value in pico seconds', default=0)
-parser.add_argument('Z', 'zmax', type=float, help='Maximum delay value in pico seconds', default=50)
+parser.add_argument('-z', '--zmin', type=float, help='Minimum delay value in pico seconds', default=0)
+parser.add_argument('-Z', '--zmax', type=float, help='Maximum delay value in pico seconds', default=50)
 parser.add_argument('-m', '--zmicro', type=float, help='z micro step size', default=2)
 parser.add_argument('-M', '--zmacro', type=float, help='z Macro step size', default=10)
 
@@ -92,10 +92,10 @@ writer_thread.start()
 reader_thread = ReaderThread()
 reader_thread.start()
 
-zlist = [z for z in frange(args.zmin,args.zmax,args.zmacro)]
+#zlist = [z for z in frange(args.zmin,args.zmax,args.zmacro)]
 
 #testing for 1 frame
-zlist =(1)                      # comment when not testing
+zlist =(1,)                      # comment when not testing
 
 for z in zlist:
     # move the delay line
@@ -107,7 +107,8 @@ for z in zlist:
     
     
     # wait for the writer to complete the frame
-    data.frame_done.wait()
+    with data.frame_done:
+        data.frame_done.wait()
     change_ctrl(control_fd, WAIT_NSTART)
     change_ctrl(control_fd, NWAIT_NSTART)
     pass

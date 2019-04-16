@@ -20,10 +20,11 @@ class ReaderThread(Thread):
         '''the following will be called when the thread starts'''
         while not self.switch.is_set():
             raw_count = self.count_file.read(4)
-            count = struct.unpack('<I', raw_count)
-            if(count != 0xDEADBEEF):
-                print(count)
-                self.lidar_data.data_queue.put
+            count, = struct.unpack('<I', raw_count)
+            if((count != 0xDEADBEEF) ):
+                if(count != 0xBAADF00D):
+                    print(count)
+                    self.lidar_data.data_queue.put(count)
             
         # close the fifo
         self.count_file.close()

@@ -18,7 +18,7 @@ class LidarData(metaclass = Singleton):
     def __init__(self):
         self.data_queue = Queue(1000)
         self.args = None
-        self.control_file = '/dev/xillybun_timeout_control'
+        self.control_file = '/dev/xillybus_timeout_control'
         self.photoncount_file = '/dev/xillybus_refid_binnumber'
         self.current_z = None
         self.frame_done = Condition()

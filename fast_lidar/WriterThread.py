@@ -24,11 +24,12 @@ class WriterThread(Thread):
         '''the following will be called when the thread starts'''
         while not self.switch.is_set():
             self.write_file.write("{}\n".format(self.lidar_data.current_z))
-            while self.received_pixels < self.lidar_data.args.pixel_count:
-                count_data = self.lidar_data.data_queue.get()
-                self.received_pixels += self.received_pixels
-                self.write_file.write("{}\n".format(count_data))
-            self.lidar_data.frame_done.notify()
+            with self.lidar_data.frame_done:
+                while self.received_pixels < self.lidar_data.args.pixel_count:
+                    count_data = self.lidar_data.data_queue.get()
+                    self.received_pixels += self.received_pixels
+                    self.write_file.write("{}\n".format(count_data))
+                self.lidar_data.frame_done.notify()
         
         # close the file
         self.write_file.close()
