@@ -4,9 +4,9 @@ import argparse
 import counter as c
 import time
 
-DLY_START = -10
-DLY_END = 120
-DLY_INC = 2.5
+DLY_START = -150
+DLY_END = 150
+DLY_INC = 2
 TDC = 100000
 
 
@@ -17,7 +17,7 @@ args = parser.parse_args()
 
 
 mems = m.open_mirror()
-m.set_pos(mems, 0.01, 0.3)
+m.set_pos(mems,-0.03 , -0.03)
 
 dly = Gpib(name =0, pad =5)
 
@@ -44,22 +44,37 @@ def frange(end,start=0,inc=0,precision=1):
         L.append(L[i-1] + inc)
     return L
 
-
-for i in range(0, 20):
-    save_file = open("{}varAtnModule{}.csv".format(args.itrno,i), 'w')
+X = []
+Y = []
+save_file = open("nlos_met6.csv","w")
+for i in range(0, 5 ):
+    max_count = 0;
+    MLV = 400;
+    #ave_file = open("{}NoHPlate{}.csv".format(args.itrno,i), 'w')
     dly.write("DLY {:.3f}".format(DLY_START))
-    time.sleep(200/1000)
+    time.sleep(600/1000)
     for dly_data in frange(DLY_START, DLY_END, DLY_INC):
         dly.write("DLY {:.3f}".format(dly_data))
-        time.sleep(150/1000)
+        time.sleep(300/1000)
         count = c.get_count(TDC)
         data = "{:.3f},{}\n".format(dly_data, count)
         print("{} {}".format(args.itrno,data))
         save_file.write(data)
-    save_file.close()
+        if(count > max_count):
+            max_count = count;
+            MLV = dly_data
+    print("HEY{} {} {}".format(MLV,max_count,i))
+    X.append(MLV)
+    Y.append(max_count)
+   #save_file.close()
 
+    data = "{:.3f},{}\n".format(MLV, max_count)
+    #ave_file.write(data)
 
-
+print(X)
+print(Y)
+save_file.close
 
 
 m.close_mirror(mems)
+dly.write('dly 0')

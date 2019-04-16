@@ -211,11 +211,11 @@ def lidar(args, fds):
             wait_mirror = 0
             for y in frange(args.ymin, args.ymax, args.ystep):
                 mems.set_pos(fds['mirror_fd'], x, y)
-               # time.sleep(0.5) #wait time to follow beam
+                time.sleep(4) #wait time to follow beam
                 if (wait_mirror == 0):
-                    #time.sleep(0.05)
+                    time.sleep(0.005)
                     wait_mirror = 1
-                count = count_helper(fds)
+                count = 0 # count_helper(fds)
                 out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
                 fds['save_fd'].write(out+'\n')
                 if(args.verbose ):
