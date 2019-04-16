@@ -26,7 +26,7 @@ class ReaderThread(Thread):
                 self.lidar_data.data_queue.put
             
         # close the fifo
-
+        self.count_file.close()
     def off(self):
         '''this will be called to close the thread'''
         self.switch.set()

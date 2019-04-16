@@ -4,6 +4,15 @@ from LidarData import LidarData
 from ReaderThread import ReaderThread
 from WriterThread import WriterThread
 
+import os
+import struct
+import sys
+
+#constants to control the frame start
+WAIT_NSTART = 2
+WAIT_START = 3
+NWAIT_NSTART = 0
+
 
 
 data = LidarData()
@@ -49,6 +58,32 @@ def frange(end,start=0,inc=0,precision=1):
 
 
 
+
+def change_ctrl(control_fd, ctrl_val):
+    '''function to change the control of the frame start'''
+    os.lseek(control_fd, 0, os.SEEK_SET)
+    os.write(control_fd, bytes([ctrl_val]))
+
+
+#open the control file
+
+control_fd = os.open(data.control_file, os.O_WRONLY)
+
+# change the dual_time and the pixel count
+if(control_fd>0):
+    os.lseek(control_fd, 1, os.SEEK_SET)
+    dual_time = struct.pack('<I', args.dual_time)
+    os.write(control_fd, dual_time);
+    pixel_count = struct.pack('<I', args.pixel_count)
+    os.write(control_fd, pixel_count)
+    change_ctrl(control_fd, WAIT_NSTART)
+else:
+    print('unable to open the control file')
+    sys.exit(-1)
+
+    
+
+
 # start the writerthread
 writer_thread = WriterThread()
 writer_thread.start()
@@ -59,14 +94,22 @@ reader_thread.start()
 
 zlist = [z for z in frange(args.zmin,args.zmax,args.zmacro)]
 
+#testing for 1 frame
+zlist =(1)                      # comment when not testing
 
 for z in zlist:
     # move the delay line
     
     #send a start pulse
 
+    change_ctrl(control_fd, WAIT_NSTART)
+    change_ctrl(control_fd, WAIT_START)
+    
+    
     # wait for the writer to complete the frame
     data.frame_done.wait()
+    change_ctrl(control_fd, WAIT_NSTART)
+    change_ctrl(control_fd, NWAIT_NSTART)
     pass
 
 
