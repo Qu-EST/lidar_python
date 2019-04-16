@@ -7,6 +7,7 @@ from WriterThread import WriterThread
 import os
 import struct
 import sys
+import time
 
 #constants to control the frame start
 WAIT_NSTART = 2
@@ -97,6 +98,7 @@ reader_thread.start()
 #testing for 1 frame
 zlist =(1,)                      # comment when not testing
 
+time.sleep(1)
 for z in zlist:
     # move the delay line
     
@@ -104,8 +106,9 @@ for z in zlist:
 
     change_ctrl(control_fd, WAIT_NSTART)
     change_ctrl(control_fd, WAIT_START)
-    
-    
+    # change_ctrl(control_fd, WAIT_NSTART)
+    # change_ctrl(control_fd, NWAIT_NSTART)
+    # change_ctrl(control_fd, WAIT_NSTART)
     # wait for the writer to complete the frame
     with data.frame_done:
         data.frame_done.wait()
@@ -123,6 +126,7 @@ writer_thread.off()
 reader_thread.join()
 writer_thread.join()
 
+os.close(control_fd)
 
 #exit
 

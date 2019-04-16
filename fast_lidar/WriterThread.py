@@ -27,7 +27,9 @@ class WriterThread(Thread):
             with self.lidar_data.frame_done:
                 while self.received_pixels < self.lidar_data.args.pixel_count:
                     count_data = self.lidar_data.data_queue.get()
-                    self.received_pixels += self.received_pixels
+                    print("count: {} received: {} to get: {}".format(count_data, self.received_pixels,self.lidar_data.args.pixel_count ))
+#                    print
+                    self.received_pixels += 1
                     self.write_file.write("{}\n".format(count_data))
                 self.lidar_data.frame_done.notify()
         
