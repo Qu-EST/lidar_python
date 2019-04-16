@@ -3,6 +3,7 @@ from Gpib import *
 import mirror as mems
 import counter
 import time
+from collections import defaultdict
 
 
 
@@ -63,7 +64,7 @@ def frange(end,start=0,inc=0,precision=1):
    # L.append(end)
     for i in (xrange(1,count)):
         L.append(L[i-1] + inc)
-    return L
+    return round(L, 3)
 
 def count_helper(fds):
     fds['count_fd'], fds['control_fd'] = counter.open_counter(args.tdc)
@@ -203,24 +204,47 @@ def lidar(args, fds):
     xlist = [x for x in frange(args.xmin, args.xmax, args.xstep)]
     ylist = [y for y in frange(args.ymin, args.ymax, args.ystep)]
     zlist = [z for z in frange(zmin,zmax,step)]
+    data_dict = defaultdict(dict)
+    for x in xlist:
+        for y in ylist:
+            data_dict[x][y] = [0,0]
+        
+    
     for z in zlist:
         
         fds['delay_fd'].write('DLY {:.3f}'.format(z))
         time.sleep(0.1)
-        for x in frange(args.xmin, args.xmax, args.xstep):
+        for x in xlist:
             wait_mirror = 0
-            for y in frange(args.ymin, args.ymax, args.ystep):
+            for y in ylist:
                 mems.set_pos(fds['mirror_fd'], x, y)
                 time.sleep(4) #wait time to follow beam
                 if (wait_mirror == 0):
                     time.sleep(0.005)
                     wait_mirror = 1
-                count = 0 # count_helper(fds)
-                out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
-                fds['save_fd'].write(out+'\n')
-                if(args.verbose ):
-                    print out
 
+                    # merge issue correct the code as desired
+                    
+# 
+#                 count = 0 # count_helper(fds)
+#                 out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+#                 fds['save_fd'].write(out+'\n')
+#                 if(args.verbose ):
+#                     print out
+
+# 
+                count = count_helper(fds)
+                if count>data_dict[x][y][1]:
+                    data_dict[x][y] =[z, count]
+#                out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(z, y, x, count)
+#                fds['save_fd'].write(out+'\n')
+#                if(args.verbose ):
+#                    print out
+    for x in xlist:
+        for y in ylist:
+            out = '{:.3f}, {:.3f}, {:.3f}, {}'.format(data_dict[x][y][0], y, x,data_dict[x][y][1])
+            fds['save_fd'].write(out+'\n')
+# 
 
 start = time.clock()
 if(args.verbose):
